@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="个人书影音、游戏与文化体验记录。">
+  <title>书影音与文化记录</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./vendor/tabulator/tabulator_simple.min.css">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./vendor/tabulator/tabulator.min.js"></script>
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <main>
+    <header><h1>书影音与文化记录</h1><p id="count" role="status" aria-live="polite">加载中…</p></header>
+    <form id="filters" role="search" aria-label="筛选记录">
+      <input id="search" name="query" type="search" aria-label="搜索记录" placeholder="搜索名称、短评、标签、时期" autocomplete="off">
+      <select id="type" name="type" aria-label="类型"><option value="">全部类型</option></select>
+      <select id="status" name="status" aria-label="状态"><option value="">全部状态</option></select>
+      <select id="year" name="year" aria-label="年份或时期"><option value="">全部年份／时期</option></select>
+      <button type="reset">重置</button>
+    </form>
+    <div id="records" aria-label="记录表"></div>
+    <p id="error" role="alert" hidden></p>
+    <noscript>请启用 JavaScript 以查看和筛选记录。</noscript>
+  </main>
+</body>
+</html>

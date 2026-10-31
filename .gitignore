@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+# 原始备份应保存在仓库外；以下仅作防误放保护。
+imports/
+backups/
+private/
+*.xlsx
+*.xls
+*.zip
