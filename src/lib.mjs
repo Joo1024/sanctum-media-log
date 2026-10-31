@@ -1,5 +1,5 @@
 export const TYPES = Object.freeze({
-  book: '书籍', movie: '电影', tv: '剧集', music: '音乐', game: '游戏',
+  book: '书籍', video: '影视', music: '音乐', game: '游戏',
   museum: '博物馆', exhibition: '展览', performance: '演出',
 });
 export const STATUSES = Object.freeze({

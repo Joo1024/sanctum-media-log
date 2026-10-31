@@ -69,10 +69,10 @@ test('示例不能与正式记录混用；删除标识不能把示例误当正�
 });
 
 test('组合名称、短评、标签、类型、当前状态与最近完成年份筛选', () => {
-  const records = [entry({ title: '海边 ABC', comment: '慢慢读', tags: ['旅行'], history: [event('completed', '2025'), event(), event('in_progress', '2027')] }), entry({ id: 'record-2', type: 'movie', history: [event('planned', null)] }), dated('2025', { id: 'record-3' })];
+  const records = [entry({ title: '海边 ABC', comment: '慢慢读', tags: ['旅行'], history: [event('completed', '2025'), event(), event('in_progress', '2027')] }), entry({ id: 'record-2', type: 'video', history: [event('planned', null)] }), dated('2025', { id: 'record-3' })];
   assert.equal(filterRecords(records, { query: 'abc 旅行', type: 'book', status: 'in_progress', year: '2026' }).length, 1);
   assert.equal(filterRecords(records, { query: '慢慢读' }).length, 1);
-  assert.equal(filterRecords(records, { type: 'movie', year: '2026' }).length, 0);
+  assert.equal(filterRecords(records, { type: 'video', year: '2026' }).length, 0);
   assert.equal(filterRecords(records, { year: 'unknown' })[0].id, 'record-2');
   for (const type of Object.keys(TYPES)) assert.equal(filterRecords([entry({ type })], { type }).length, 1);
   for (const status of Object.keys(STATUSES)) assert.equal(filterRecords([entry({ history: [event(status, null)] })], { status }).length, 1);
