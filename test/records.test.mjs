@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TYPES, STATUSES, validateRecords, validDate, isCalendarDate, currentStatus, lastCompletedDate, recordYear, yearsOf, filterRecords, sortRecords } from '../src/lib.mjs';
+import { TYPES, STATUSES, validateRecords, validDate, isCalendarDate, currentStatus, lastCompletedDate, latestUpdateDate, recordYear, yearsOf, filterRecords, sortRecords } from '../src/lib.mjs';
 
 const event = (status = 'completed', date = '2026-10-31') => ({ status, date });
 const entry = (changes = {}) => ({ id: 'record-1', title: '测试作品', type: 'book', history: [event()], rating: null, comment: '', tags: [], url: [], review_url: '', ...changes });
@@ -43,21 +43,25 @@ test('当前状态取末项，最近完成日期取最后的 completed，而不�
   const snapshot = structuredClone(record);
   assert.equal(currentStatus(record), 'paused');
   assert.equal(lastCompletedDate(record), '中学时代');
-  assert.equal(recordYear(record), 'custom');
-  assert.equal(filterRecords([record], { status: 'paused', year: 'custom' }).length, 1);
+  assert.equal(latestUpdateDate(record), '2027-02');
+  assert.equal(recordYear(record), '2027');
+  assert.equal(filterRecords([record], { status: 'paused', year: '2027' }).length, 1);
   assert.equal(filterRecords([record], { status: 'completed' }).length, 0);
   assert.equal(filterRecords([record], { year: '2026' }).length, 0);
-  assert.equal(filterRecords([record], { query: '2027-02' }).length, 0);
+  assert.equal(filterRecords([record], { query: '2027-02' }).length, 1);
   assert.deepEqual(record, snapshot);
 });
 
-test('没有完成事件或最后完成日期未知，均不使用其他事件的日期或更早完成日期', () => {
+test('最近完成日期仍单独推导；列表日期与年份使用最后事件，不回退', () => {
   for (const history of [[event('in_progress', '2026-10')], [event('planned', '中学时代')], [event(), event('completed', null), event('abandoned', '2027')], [event(), event('completed', '')]]) {
     const record = entry({ history });
     assert.equal(lastCompletedDate(record), null);
-    assert.equal(recordYear(record), 'unknown');
-    assert.deepEqual(yearsOf([record]), []);
-    assert.equal(filterRecords([record], { year: 'unknown' }).length, 1);
+    const lastDate = history.at(-1).date || null;
+    assert.equal(latestUpdateDate(record), lastDate);
+    const year = !lastDate ? 'unknown' : isCalendarDate(lastDate) ? lastDate.slice(0, 4) : 'custom';
+    assert.equal(recordYear(record), year);
+    assert.deepEqual(yearsOf([record]), /^\d{4}$/.test(year) ? [year] : []);
+    assert.equal(filterRecords([record], { year }).length, 1);
   }
 });
 
@@ -68,9 +72,9 @@ test('示例不能与正式记录混用；删除标识不能把示例误当正�
   assert.ok(validateRecords([entry({ id: 'demo-1' })]).length);
 });
 
-test('组合名称、短评、标签、类型、当前状态与最近完成年份筛选', () => {
+test('组合名称、短评、标签、类型、当前状态与最新更新年份筛选', () => {
   const records = [entry({ title: '海边 ABC', comment: '慢慢读', tags: ['旅行'], history: [event('completed', '2025'), event(), event('in_progress', '2027')] }), entry({ id: 'record-2', type: 'video', history: [event('planned', null)] }), dated('2025', { id: 'record-3' })];
-  assert.equal(filterRecords(records, { query: 'abc 旅行', type: 'book', status: 'in_progress', year: '2026' }).length, 1);
+  assert.equal(filterRecords(records, { query: 'abc 旅行', type: 'book', status: 'in_progress', year: '2027' }).length, 1);
   assert.equal(filterRecords(records, { query: '慢慢读' }).length, 1);
   assert.equal(filterRecords(records, { type: 'video', year: '2026' }).length, 0);
   assert.equal(filterRecords(records, { year: 'unknown' })[0].id, 'record-2');
@@ -78,9 +82,9 @@ test('组合名称、短评、标签、类型、当前状态与最近完成年�
   for (const status of Object.keys(STATUSES)) assert.equal(filterRecords([entry({ history: [event(status, null)] })], { status }).length, 1);
 });
 
-test('按最近完成日期排序，保留日期精度，自定义时期与未知日期置后', () => {
+test('按最新更新日期排序，保留日期精度，自定义时期与未知日期置后', () => {
   const records = [dated(null, { id: 'unknown' }), dated('2026', { id: 'year' }), dated('2026-10', { id: 'month' }), entry({ id: 'day', history: [event(), event('in_progress', '2027')] }), entry({ id: 'planned', history: [event('planned', '2028')] })];
-  assert.deepEqual(sortRecords(records).map(record => record.id), ['day', 'month', 'year', 'planned', 'unknown']);
+  assert.deepEqual(sortRecords(records).map(record => record.id), ['planned', 'day', 'month', 'year', 'unknown']);
   assert.equal(filterRecords(records, { year: '2026', status: 'completed' }).length, 2);
   assert.equal(filterRecords(records, { year: 'unknown', status: 'completed' }).length, 1);
   assert.equal(records[1].history[0].date, '2026');
@@ -99,7 +103,7 @@ test('来源链接保留空数组和多个 HTTP(S) 链接，长评仍是单个�
   assert.ok(validateRecords([entry({ review_url: [] })]).length);
 });
 
-test('最近完成的自定义时期原样保留，可搜索并与标准年份、未知日期分组筛选', () => {
+test('最新更新的自定义时期原样保留，可搜索并与标准年份、未知日期分组筛选', () => {
   const records = [dated('中学时代', { id: 'school' }), dated('2026年暑假', { id: 'summer' }), dated('2026', { id: 'year' }), dated(null, { id: 'unknown' })];
   assert.deepEqual(validateRecords(records), []);
   assert.equal(isCalendarDate('中学时代'), false);
@@ -112,4 +116,20 @@ test('最近完成的自定义时期原样保留，可搜索并与标准年份�
   assert.deepEqual(filterRecords(records, { year: 'unknown' }).map(record => record.id), ['unknown']);
   assert.deepEqual(sortRecords(records).map(record => record.id), ['year', 'school', 'summer', 'unknown']);
   assert.equal(records[0].history[0].date, '中学时代');
+});
+
+
+test('计划中和进行中的日期进入列表；最后事件日期未知时不回退到完成日期', () => {
+  const records = [
+    entry({ id: 'planned', history: [event('planned', '2026-12')] }),
+    entry({ id: 'reading', history: [event('completed', '2025'), event('in_progress', '中学时代')] }),
+    entry({ id: 'unknown', history: [event('completed', '2025'), event('paused', null)] }),
+  ];
+  assert.deepEqual(yearsOf(records), ['2026']);
+  assert.deepEqual(filterRecords(records, { year: '2026' }).map(r => r.id), ['planned']);
+  assert.deepEqual(filterRecords(records, { year: 'custom' }).map(r => r.id), ['reading']);
+  assert.deepEqual(filterRecords(records, { year: 'unknown' }).map(r => r.id), ['unknown']);
+  assert.deepEqual(filterRecords(records, { year: '2025' }), []);
+  assert.equal(lastCompletedDate(records[2]), '2025');
+  assert.equal(latestUpdateDate(records[2]), null);
 });

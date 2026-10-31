@@ -3,7 +3,7 @@ export const TYPES = Object.freeze({
   museum: '博物馆', exhibition: '展览', performance: '演出',
 });
 export const STATUSES = Object.freeze({
-  planned: '想体验', in_progress: '进行中', completed: '已完成',
+  planned: '计划中', in_progress: '进行中', completed: '已完成',
   paused: '已暂停', abandoned: '已放弃',
 });
 export const REQUIRED_FIELDS = ['id', 'title', 'type', 'history', 'rating', 'comment', 'tags', 'url', 'review_url'];
@@ -84,6 +84,9 @@ export function validateRecords(records) {
 export function currentStatus(record) {
   return record.history.at(-1).status;
 }
+export function latestUpdateDate(record) {
+  return record.history.at(-1).date || null;
+}
 export function lastCompletedDate(record) {
   // 数组顺序就是实际发生顺序；不按日期排序，也不跳过未知的完成日期。
   for (let index = record.history.length - 1; index >= 0; index--) {
@@ -92,7 +95,7 @@ export function lastCompletedDate(record) {
   return null;
 }
 export function recordYear(record) {
-  const date = lastCompletedDate(record);
+  const date = latestUpdateDate(record);
   if (!date) return 'unknown';
   return isCalendarDate(date) ? date.slice(0, 4) : 'custom';
 }
@@ -104,13 +107,13 @@ export function filterRecords(records, { query = '', type = '', status = '', yea
 }
 export function matchesRecord(record, { query = '', type = '', status = '', year = '' } = {}) {
   const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
-  const searchable = [record.title, record.comment, lastCompletedDate(record) || '', ...record.tags].join(' ').toLocaleLowerCase();
+  const searchable = [record.title, record.comment, latestUpdateDate(record) || '', ...record.tags].join(' ').toLocaleLowerCase();
   return (!type || record.type === type) && (!status || currentStatus(record) === status)
     && (!year || recordYear(record) === year) && words.every(word => searchable.includes(word));
 }
 export function sortRecords(records) {
   // 明确日期倒序；自定义时期不猜测年代，按 id 稳定排列；空日期最后。
-  const group = record => isCalendarDate(lastCompletedDate(record)) ? 0 : lastCompletedDate(record) ? 1 : 2;
+  const group = record => isCalendarDate(latestUpdateDate(record)) ? 0 : latestUpdateDate(record) ? 1 : 2;
   return [...records].sort((a, b) => group(a) - group(b)
-    || (group(a) === 0 ? lastCompletedDate(b).localeCompare(lastCompletedDate(a)) : 0) || a.id.localeCompare(b.id));
+    || (group(a) === 0 ? latestUpdateDate(b).localeCompare(latestUpdateDate(a)) : 0) || a.id.localeCompare(b.id));
 }

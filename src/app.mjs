@@ -1,43 +1,106 @@
-import { TYPES, STATUSES, validateRecords, matchesRecord, sortRecords, yearsOf, validUrl, currentStatus, lastCompletedDate } from './lib.mjs';
+import { TYPES, STATUSES, validateRecords, matchesRecord, sortRecords, yearsOf, validUrl, currentStatus, latestUpdateDate } from './lib.mjs';
 
 const form = document.querySelector('#filters');
 const count = document.querySelector('#count');
+const expanded = new Set();
 
 function addOptions(selector, entries) {
   const select = document.querySelector(selector);
   for (const [value, label] of entries) select.add(new Option(label, value));
 }
 
-function titleCell(cell) {
-  const record = cell.getRow().getData();
-  const element = document.createElement('div');
-  element.className = 'title-cell';
-  const title = document.createElement('span');
-  title.textContent = record.title;
-  element.append(title);
+function textElement(tag, text, className) {
+  const element = document.createElement(tag);
+  element.textContent = text;
+  if (className) element.className = className;
+  return element;
+}
+
+function sourceLink(url, label) {
+  const link = textElement('a', label);
+  link.href = url;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.title = url;
+  return link;
+}
+
+function progressText(progress) {
+  if (!progress || typeof progress !== 'object') return String(progress ?? '');
+  return `${progress.value ?? '—'}${progress.total != null ? ` / ${progress.total}` : ''}${progress.unit ? ` ${progress.unit}` : ''}`;
+}
+
+function detailsFor(record) {
+  const section = document.createElement('section');
+  section.id = `details-${record.id}`;
+  section.className = 'record-details';
+  section.setAttribute('aria-label', `${record.title}的详情`);
+  const fields = document.createElement('dl');
+  fields.className = 'detail-fields';
+  function field(label, value) {
+    if (value === null || value === undefined || value === '') return;
+    const group = document.createElement('div');
+    const content = document.createElement('dd');
+    if (value instanceof Node) content.append(value);
+    else content.textContent = Array.isArray(value) ? value.join('、') : String(value);
+    if (!content.textContent) return;
+    group.append(textElement('dt', label), content);
+    fields.append(group);
+  }
+  field('评分', record.rating === null ? null : `${record.rating} / 5`);
+  field('短评', record.comment);
+  field('标签', record.tags);
+  field('作者', record.author);
+  field('书单／片单', record.lists);
+  field('进度', record.progress ? progressText(record.progress) : null);
   const links = document.createElement('div');
   links.className = 'record-links';
   record.url.forEach((url, index) => {
-    if (!url || !validUrl(url)) return;
-    const source = document.createElement('a');
-    source.href = url;
-    source.textContent = record.url.length === 1 ? '来源 ↗' : `来源 ${index + 1} ↗`;
-    source.title = url;
-    source.target = '_blank';
-    source.rel = 'noopener noreferrer';
-    links.append(source);
+    if (url && validUrl(url)) links.append(sourceLink(url, record.url.length === 1 ? '来源 ↗' : `来源 ${index + 1} ↗`));
   });
-  if (record.review_url && validUrl(record.review_url)) {
-    const review = document.createElement('a');
-    review.href = record.review_url;
-    review.textContent = record.demo ? '长评示例 ↗' : '长评 ↗';
-    review.className = 'review-link';
-    review.target = '_blank';
-    review.rel = 'noopener noreferrer';
-    links.append(review);
-  }
-  if (links.childNodes.length) element.append(links);
-  return element;
+  if (record.review_url && validUrl(record.review_url)) links.append(sourceLink(record.review_url, record.demo ? '长评示例 ↗' : '长评 ↗'));
+  field('链接', links);
+  if (fields.childNodes.length) section.append(fields);
+
+  section.append(textElement('h2', '历史'));
+  const history = document.createElement('ol');
+  history.className = 'history-list';
+  record.history.forEach(event => {
+    const item = document.createElement('li');
+    item.append(textElement('span', event.date || '日期未记', 'history-date'), textElement('span', STATUSES[event.status], 'history-status'));
+    if (event.rating != null) item.append(textElement('span', `${event.rating} / 5`, 'history-extra'));
+    if (event.progress) item.append(textElement('span', progressText(event.progress), 'history-extra'));
+    if (event.comment) item.append(textElement('span', event.comment, 'history-comment'));
+    history.append(item);
+  });
+  section.append(history);
+  return section;
+}
+
+function toggleRow(row) {
+  const id = row.getData().id;
+  if (expanded.has(id)) expanded.delete(id);
+  else expanded.add(id);
+  const focused = row.getElement().querySelector('.expand-button') === document.activeElement;
+  row.reformat();
+  row.normalizeHeight();
+  row.getTable().redraw();
+  if (focused) row.getElement().querySelector('.expand-button')?.focus({ preventScroll: true });
+}
+
+function titleCell(cell) {
+  const row = cell.getRow();
+  const record = row.getData();
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'expand-button';
+  button.setAttribute('aria-expanded', String(expanded.has(record.id)));
+  button.setAttribute('aria-controls', `details-${record.id}`);
+  const caret = textElement('span', '›', 'expand-caret');
+  caret.setAttribute('aria-hidden', 'true');
+  button.append(caret, textElement('span', record.title));
+  button.addEventListener('click', event => { event.stopPropagation(); toggleRow(row); });
+  return button;
 }
 
 try {
@@ -53,32 +116,29 @@ try {
 
   const table = new Tabulator('#records', {
     data: sortRecords(records).map(record => ({
-      ...record, current_status: currentStatus(record), completed_date: lastCompletedDate(record),
+      ...record, current_status: currentStatus(record), updated_date: latestUpdateDate(record),
     })),
     index: 'id',
     layout: 'fitColumns',
-    responsiveLayout: 'collapse',
-    responsiveLayoutCollapseStartOpen: true,
+    responsiveLayout: false,
     maxHeight: 'calc(100dvh - 150px)',
     placeholder: records.length ? '没有匹配的记录' : '暂无记录',
     columnDefaults: { vertAlign: 'middle', headerSort: true, resizable: true },
     columns: [
-      { title: '名称', field: 'title', minWidth: 210, widthGrow: 2, responsive: 0, formatter: titleCell, variableHeight: true },
-      { title: '类型', field: 'type', width: 80, responsive: 4, formatter: cell => TYPES[cell.getValue()] },
-      { title: '当前状态', field: 'current_status', width: 105, responsive: 3, formatter: cell => STATUSES[cell.getValue()] },
-      { title: '最近完成／时期', field: 'completed_date', width: 145, responsive: 1, formatter: cell => {
-        const text = document.createElement('span');
-        text.textContent = cell.getValue() || '—';
-        return text;
-      }, sorter: 'string' },
-      { title: '评分', field: 'rating', width: 75, responsive: 2, formatter: cell => cell.getValue() === null ? '—' : `${cell.getValue()} / 5`, sorter: 'number' },
-      { title: '短评', field: 'comment', minWidth: 230, widthGrow: 3, responsive: 6, formatter: 'textarea', variableHeight: true },
-      { title: '标签', field: 'tags', minWidth: 130, responsive: 5, formatter: cell => {
-        const element = document.createElement('span');
-        element.textContent = cell.getValue().join('、');
-        return element;
-      }, headerSort: false },
+      { title: '名称', field: 'title', minWidth: 100, widthGrow: 4, formatter: titleCell, variableHeight: true },
+      { title: '类型', field: 'type', minWidth: 56, widthGrow: 1, formatter: cell => TYPES[cell.getValue()] },
+      { title: '状态', field: 'current_status', minWidth: 66, widthGrow: 1.2, formatter: cell => STATUSES[cell.getValue()] },
+      { title: '最新更新日期', field: 'updated_date', minWidth: 110, widthGrow: 1.5, formatter: cell => textElement('span', cell.getValue() || '—'), sorter: 'string' },
     ],
+    rowFormatter: row => {
+      const element = row.getElement();
+      element.querySelector('.record-details')?.remove();
+      element.classList.toggle('is-expanded', expanded.has(row.getData().id));
+      if (expanded.has(row.getData().id)) element.append(detailsFor(row.getData()));
+    },
+  });
+  table.on('rowClick', (event, row) => {
+    if (!event.target.closest('a, button, .record-details') && !window.getSelection()?.toString()) toggleRow(row);
   });
 
   const updateCount = rows => { count.textContent = `${rows.length} / ${records.length} 条${demo ? ' · 全部为虚构示例' : ''}`; };
