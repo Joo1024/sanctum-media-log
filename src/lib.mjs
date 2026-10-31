@@ -6,7 +6,7 @@ export const STATUSES = Object.freeze({
   planned: '想体验', in_progress: '进行中', completed: '已完成',
   paused: '已暂停', abandoned: '已放弃',
 });
-export const REQUIRED_FIELDS = ['id', 'title', 'type', 'status', 'date', 'rating', 'comment', 'tags', 'url', 'review_url'];
+export const REQUIRED_FIELDS = ['id', 'title', 'type', 'history', 'rating', 'comment', 'tags', 'url', 'review_url'];
 
 export function isCalendarDate(value) {
   if (typeof value !== 'string' || !/^\d{4}(-\d{2})?(-\d{2})?$/.test(value)) return false;
@@ -50,8 +50,24 @@ export function validateRecords(records) {
     ids.add(record.id);
     if (typeof record.title !== 'string' || !record.title.trim()) errors.push(`${at}：title 不能为空。`);
     if (!Object.hasOwn(TYPES, record.type)) errors.push(`${at}：不支持的 type：${record.type}。`);
-    if (!Object.hasOwn(STATUSES, record.status)) errors.push(`${at}：不支持的 status：${record.status}。`);
-    if (!validDate(record.date)) errors.push(`${at}：date 需为有效日期、自定义时期文本或 null；标准日期不能是无效日历日期。`);
+    for (const key of ['status', 'date']) {
+      if (Object.hasOwn(record, key)) errors.push(`${at}：不再支持顶层 ${key}，请放入 history 事件。`);
+    }
+    if (!Array.isArray(record.history) || record.history.length === 0) {
+      errors.push(`${at}：history 必须是至少包含一项事件的数组。`);
+    } else {
+      record.history.forEach((event, eventIndex) => {
+        const eventAt = `${at} history 第 ${eventIndex + 1} 项`;
+        if (!event || typeof event !== 'object' || Array.isArray(event)) {
+          errors.push(`${eventAt}：事件必须是对象。`); return;
+        }
+        for (const key of ['status', 'date']) {
+          if (!Object.hasOwn(event, key)) errors.push(`${eventAt}：缺少 ${key}。`);
+        }
+        if (!Object.hasOwn(STATUSES, event.status)) errors.push(`${eventAt}：不支持的 status：${event.status}。`);
+        if (!validDate(event.date)) errors.push(`${eventAt}：date 需为有效日期、自定义时期文本或 null；标准日期不能是无效日历日期。`);
+      });
+    }
     if (record.rating !== null && (typeof record.rating !== 'number' || !Number.isFinite(record.rating) || record.rating < 0 || record.rating > 5)) errors.push(`${at}：rating 需为 0–5 的数字或 null。`);
     if (typeof record.comment !== 'string') errors.push(`${at}：comment 必须是字符串。`);
     if (!Array.isArray(record.tags) || record.tags.some(tag => typeof tag !== 'string' || !tag.trim()) || new Set(record.tags).size !== record.tags.length) errors.push(`${at}：tags 需为无重复、非空字符串的数组。`);
@@ -65,9 +81,20 @@ export function validateRecords(records) {
   return errors;
 }
 
+export function currentStatus(record) {
+  return record.history.at(-1).status;
+}
+export function lastCompletedDate(record) {
+  // 数组顺序就是实际发生顺序；不按日期排序，也不跳过未知的完成日期。
+  for (let index = record.history.length - 1; index >= 0; index--) {
+    if (record.history[index].status === 'completed') return record.history[index].date || null;
+  }
+  return null;
+}
 export function recordYear(record) {
-  if (!record.date) return 'unknown';
-  return isCalendarDate(record.date) ? record.date.slice(0, 4) : 'custom';
+  const date = lastCompletedDate(record);
+  if (!date) return 'unknown';
+  return isCalendarDate(date) ? date.slice(0, 4) : 'custom';
 }
 export function yearsOf(records) {
   return [...new Set(records.map(recordYear).filter(year => /^\d{4}$/.test(year)))].sort().reverse();
@@ -77,13 +104,13 @@ export function filterRecords(records, { query = '', type = '', status = '', yea
 }
 export function matchesRecord(record, { query = '', type = '', status = '', year = '' } = {}) {
   const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
-  const searchable = [record.title, record.comment, record.date || '', ...record.tags].join(' ').toLocaleLowerCase();
-  return (!type || record.type === type) && (!status || record.status === status)
+  const searchable = [record.title, record.comment, lastCompletedDate(record) || '', ...record.tags].join(' ').toLocaleLowerCase();
+  return (!type || record.type === type) && (!status || currentStatus(record) === status)
     && (!year || recordYear(record) === year) && words.every(word => searchable.includes(word));
 }
 export function sortRecords(records) {
   // 明确日期倒序；自定义时期不猜测年代，按 id 稳定排列；空日期最后。
-  const group = record => isCalendarDate(record.date) ? 0 : record.date ? 1 : 2;
+  const group = record => isCalendarDate(lastCompletedDate(record)) ? 0 : lastCompletedDate(record) ? 1 : 2;
   return [...records].sort((a, b) => group(a) - group(b)
-    || (group(a) === 0 ? b.date.localeCompare(a.date) : 0) || a.id.localeCompare(b.id));
+    || (group(a) === 0 ? lastCompletedDate(b).localeCompare(lastCompletedDate(a)) : 0) || a.id.localeCompare(b.id));
 }

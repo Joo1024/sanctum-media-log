@@ -17,7 +17,10 @@ test('构建空数组可用，输出只包含网站源码和主数据，不复�
     assert.deepEqual((await readdir(output)).sort(), ['.nojekyll', 'app.mjs', 'data', 'favicon.svg', 'index.html', 'lib.mjs', 'styles.css', 'vendor']);
     assert.ok((await readFile(join(output, 'vendor/tabulator/tabulator.min.js'), 'utf8')).length > 10000);
     assert.match(await readFile(join(output, 'vendor/tabulator/LICENSE'), 'utf8'), /MIT/);
-    assert.match(await readFile(join(output, 'index.html'), 'utf8'), /\.\/app\.mjs/);
+    const page = await readFile(join(output, 'index.html'), 'utf8');
+    assert.match(page, /\.\/app\.mjs/);
+    assert.match(page, /<title>sanctum-media-log<\/title>/);
+    assert.match(page, /<h1>sanctum-media-log<\/h1>/);
     await writeFile(join(output, 'sentinel'), '保留上一次构建');
     await writeFile(source, '[{}]');
     await assert.rejects(build({ output, recordsPath: source }), /主数据校验失败/);

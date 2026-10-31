@@ -1,4 +1,4 @@
-import { TYPES, STATUSES, validateRecords, matchesRecord, sortRecords, yearsOf, validUrl } from './lib.mjs';
+import { TYPES, STATUSES, validateRecords, matchesRecord, sortRecords, yearsOf, validUrl, currentStatus, lastCompletedDate } from './lib.mjs';
 
 const form = document.querySelector('#filters');
 const count = document.querySelector('#count');
@@ -47,13 +47,14 @@ try {
   const errors = validateRecords(records);
   if (errors.length) throw new Error(errors.join('\n'));
   const demo = records.some(record => record.demo);
-  document.title = `书影音与文化记录${demo ? '（虚构示例）' : ''}`;
   addOptions('#type', Object.entries(TYPES));
   addOptions('#status', Object.entries(STATUSES));
   addOptions('#year', [...yearsOf(records).map(year => [year, `${year} 年`]), ['custom', '自定义时期'], ['unknown', '日期未记']]);
 
   const table = new Tabulator('#records', {
-    data: sortRecords(records),
+    data: sortRecords(records).map(record => ({
+      ...record, current_status: currentStatus(record), completed_date: lastCompletedDate(record),
+    })),
     index: 'id',
     layout: 'fitColumns',
     responsiveLayout: 'collapse',
@@ -64,8 +65,8 @@ try {
     columns: [
       { title: '名称', field: 'title', minWidth: 210, widthGrow: 2, responsive: 0, formatter: titleCell, variableHeight: true },
       { title: '类型', field: 'type', width: 80, responsive: 4, formatter: cell => TYPES[cell.getValue()] },
-      { title: '状态', field: 'status', width: 90, responsive: 3, formatter: cell => STATUSES[cell.getValue()] },
-      { title: '日期／时期', field: 'date', width: 125, responsive: 1, formatter: cell => {
+      { title: '当前状态', field: 'current_status', width: 105, responsive: 3, formatter: cell => STATUSES[cell.getValue()] },
+      { title: '最近完成／时期', field: 'completed_date', width: 145, responsive: 1, formatter: cell => {
         const text = document.createElement('span');
         text.textContent = cell.getValue() || '—';
         return text;

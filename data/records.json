@@ -3,8 +3,12 @@
     "id": "demo-book-01",
     "title": "月光下的旧书店（虚构）",
     "type": "book",
-    "status": "completed",
-    "date": "2026-10-12",
+    "history": [
+      {
+        "status": "completed",
+        "date": "2026-10-12"
+      }
+    ],
     "rating": 4.5,
     "comment": "虚构示例：喜欢那些关于书页、雨声和缓慢生活的片段。",
     "tags": [
@@ -22,8 +26,12 @@
     "id": "demo-movie-01",
     "title": "最后一班海岸列车（虚构）",
     "type": "movie",
-    "status": "completed",
-    "date": "2026-09",
+    "history": [
+      {
+        "status": "completed",
+        "date": "2026-09"
+      }
+    ],
     "rating": 4,
     "comment": "虚构示例：故事很轻，海浪与车窗留下的余韵很长。只记得观看月份。",
     "tags": [
@@ -40,8 +48,12 @@
     "id": "demo-museum-01",
     "title": "城市记忆博物馆（虚构）",
     "type": "museum",
-    "status": "completed",
-    "date": "中学时代",
+    "history": [
+      {
+        "status": "completed",
+        "date": "中学时代"
+      }
+    ],
     "rating": null,
     "comment": "虚构示例：对旧地图印象很深，只记得参观是在中学时代。",
     "tags": [
@@ -56,8 +68,12 @@
     "id": "demo-performance-01",
     "title": "风经过剧场（虚构）",
     "type": "performance",
-    "status": "completed",
-    "date": "2025-11-08",
+    "history": [
+      {
+        "status": "completed",
+        "date": "2025-11-08"
+      }
+    ],
     "rating": 5,
     "comment": "虚构示例：谢幕时，仍舍不得离开那个舞台。",
     "tags": [
@@ -72,8 +88,12 @@
     "id": "demo-tv-01",
     "title": "巷口的四季（虚构）",
     "type": "tv",
-    "status": "in_progress",
-    "date": null,
+    "history": [
+      {
+        "status": "in_progress",
+        "date": null
+      }
+    ],
     "rating": null,
     "comment": "虚构示例：慢慢看，不着急知道结局。",
     "tags": [
@@ -88,8 +108,12 @@
     "id": "demo-game-01",
     "title": "纸上群岛（虚构）",
     "type": "game",
-    "status": "paused",
-    "date": null,
+    "history": [
+      {
+        "status": "paused",
+        "date": null
+      }
+    ],
     "rating": null,
     "comment": "虚构示例：先停在这座岛上，有空再回来。",
     "tags": [
@@ -104,8 +128,12 @@
     "id": "demo-exhibition-01",
     "title": "一百种蓝色（虚构）",
     "type": "exhibition",
-    "status": "planned",
-    "date": null,
+    "history": [
+      {
+        "status": "planned",
+        "date": null
+      }
+    ],
     "rating": null,
     "comment": "虚构示例：留给下一个有阳光的周末。",
     "tags": [
@@ -120,8 +148,12 @@
     "id": "demo-music-01",
     "title": "房间里的潮汐（虚构）",
     "type": "music",
-    "status": "abandoned",
-    "date": null,
+    "history": [
+      {
+        "status": "abandoned",
+        "date": null
+      }
+    ],
     "rating": 2,
     "comment": "虚构示例：这次没有听完，也保留这段经历。",
     "tags": [
