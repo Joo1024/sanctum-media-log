@@ -81,11 +81,20 @@ function toggleRow(row) {
   const id = row.getData().id;
   if (expanded.has(id)) expanded.delete(id);
   else expanded.add(id);
-  const focused = row.getElement().querySelector('.expand-button') === document.activeElement;
-  row.reformat();
+  // 保留按钮与焦点，仅改变本行详情，避免重绘或替换行导致滚动位置漂移。
+  formatRow(row);
   row.normalizeHeight();
-  row.getTable().redraw();
-  if (focused) row.getElement().querySelector('.expand-button')?.focus({ preventScroll: true });
+}
+
+function formatRow(row) {
+  const element = row.getElement();
+  const record = row.getData();
+  const open = expanded.has(record.id);
+  const details = element.querySelector('.record-details');
+  element.classList.toggle('is-expanded', open);
+  element.querySelector('.expand-button')?.setAttribute('aria-expanded', String(open));
+  if (open && !details) element.append(detailsFor(record));
+  else if (!open && details) details.remove();
 }
 
 function titleCell(cell) {
@@ -121,7 +130,9 @@ try {
     index: 'id',
     layout: 'fitColumns',
     responsiveLayout: false,
-    maxHeight: 'calc(100dvh - 150px)',
+    // 目前不足千条记录，使用真实行高避免虚拟列表估算高度引起滚动条跳动。
+    renderVertical: 'basic',
+    height: '100%',
     placeholder: records.length ? '没有匹配的记录' : '暂无记录',
     columnDefaults: { vertAlign: 'middle', headerSort: true, resizable: true },
     columns: [
@@ -130,12 +141,7 @@ try {
       { title: '状态', field: 'current_status', minWidth: 66, widthGrow: 1.2, formatter: cell => STATUSES[cell.getValue()] },
       { title: '最新更新日期', field: 'updated_date', minWidth: 110, widthGrow: 1.5, formatter: cell => textElement('span', cell.getValue() || '—'), sorter: 'string' },
     ],
-    rowFormatter: row => {
-      const element = row.getElement();
-      element.querySelector('.record-details')?.remove();
-      element.classList.toggle('is-expanded', expanded.has(row.getData().id));
-      if (expanded.has(row.getData().id)) element.append(detailsFor(row.getData()));
-    },
+    rowFormatter: formatRow,
   });
   table.on('rowClick', (event, row) => {
     if (!event.target.closest('a, button, .record-details') && !window.getSelection()?.toString()) toggleRow(row);
