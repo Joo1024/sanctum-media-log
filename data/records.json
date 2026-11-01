@@ -1863,7 +1863,7 @@
     "history": [
       {
         "status": "completed",
-        "date": "2025-12-03"
+        "date": "2012-2015"
       }
     ],
     "rating": null,
@@ -1881,12 +1881,8 @@
     "history": [
       {
         "status": "completed",
-        "date": "2014-01-01",
+        "date": "2012-2015",
         "rating": 3
-      },
-      {
-        "status": "completed",
-        "date": "2025-12-03"
       }
     ],
     "rating": 3,
@@ -1945,12 +1941,8 @@
     "history": [
       {
         "status": "completed",
-        "date": "2017-01-01",
+        "date": "2012-2015",
         "rating": 2
-      },
-      {
-        "status": "completed",
-        "date": "2025-12-03"
       }
     ],
     "rating": 2,
@@ -2014,12 +2006,8 @@
     "history": [
       {
         "status": "completed",
-        "date": "2018-01-01",
+        "date": "2012-2015",
         "rating": 2
-      },
-      {
-        "status": "completed",
-        "date": "2025-12-03"
       }
     ],
     "rating": 2,
@@ -2536,12 +2524,12 @@
     "history": [
       {
         "status": "completed",
-        "date": "2022-12-01",
-        "rating": 3
+        "date": "2012-2015"
       },
       {
         "status": "completed",
-        "date": "2025-12-03"
+        "date": "2022-12-01",
+        "rating": 3
       }
     ],
     "rating": 3,
@@ -3277,7 +3265,7 @@
     "history": [
       {
         "status": "completed",
-        "date": "2025-11-16",
+        "date": "2012-2015",
         "rating": 5
       }
     ],
@@ -3864,6 +3852,10 @@
     "history": [
       {
         "status": "completed",
+        "date": "2012-2015"
+      },
+      {
+        "status": "completed",
         "date": "2022-07-01",
         "rating": 3
       },
@@ -3890,6 +3882,10 @@
     "history": [
       {
         "status": "completed",
+        "date": "2012-2015"
+      },
+      {
+        "status": "completed",
         "date": "2022-07-01",
         "rating": 3
       },
@@ -3913,6 +3909,10 @@
     "history": [
       {
         "status": "completed",
+        "date": "2012-2015"
+      },
+      {
+        "status": "completed",
         "date": "2025-10-25",
         "rating": 4
       },
@@ -3934,6 +3934,10 @@
     "title": "缘分天注定 / Serendipity / 美国情缘 / 情有独钟",
     "type": "video",
     "history": [
+      {
+        "status": "completed",
+        "date": "2012-2015"
+      },
       {
         "status": "completed",
         "date": "2025-10-25"
@@ -3974,6 +3978,10 @@
     "title": "初恋的回忆 / A Walk to Remember / 青涩年代 / 流星初恋",
     "type": "video",
     "history": [
+      {
+        "status": "completed",
+        "date": "2012-2015"
+      },
       {
         "status": "completed",
         "date": "2025-10-25",
@@ -4054,7 +4062,7 @@
     "history": [
       {
         "status": "completed",
-        "date": "2025-10-25"
+        "date": "2012-2015"
       }
     ],
     "rating": null,
@@ -4072,7 +4080,7 @@
     "history": [
       {
         "status": "completed",
-        "date": "2025-10-25"
+        "date": "2012-2015"
       }
     ],
     "rating": null,
@@ -4236,7 +4244,7 @@
     "history": [
       {
         "status": "completed",
-        "date": "2025-10-25",
+        "date": "2012-2015",
         "rating": 4
       }
     ],
@@ -4255,7 +4263,7 @@
     "history": [
       {
         "status": "completed",
-        "date": "2025-10-25",
+        "date": "2012-2015",
         "rating": 4
       }
     ],
@@ -4312,12 +4320,8 @@
     "history": [
       {
         "status": "completed",
-        "date": "2014-01-01",
+        "date": "2012-2015",
         "rating": 3
-      },
-      {
-        "status": "completed",
-        "date": "2025-09-17"
       }
     ],
     "rating": 3,

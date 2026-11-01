@@ -36,6 +36,16 @@ test('每项事件均校验日期；拒绝重复标识、非法评分和链接',
   for (const changes of [{ rating: 6 }, { rating: '4' }, { url: ['javascript:alert(1)'] }, { url: '' }, { url: null }, { url: [''] }, { url: ['https://example.com', 123] }, { review_url: '/blog' }, { tags: ['重复', '重复'] }, { type: 'invalid' }]) assert.ok(validateRecords([entry(changes)]).length);
 });
 
+test('年份区间作为自定义时期展示和筛选', () => {
+  const record = dated('2012-2015');
+  assert.deepEqual(validateRecords([record]), []);
+  assert.equal(latestUpdateDate(record), '2012-2015');
+  assert.equal(recordYear(record), 'custom');
+  assert.deepEqual(yearsOf([record]), []);
+  assert.equal(filterRecords([record], { year: 'custom', query: '2012-2015' }).length, 1);
+  for (const date of ['2015-2012', '0000-2015', '2012-20155']) assert.equal(validDate(date), false);
+});
+
 test('当前状态和列表日期取末项，而不是日期最大值或最后完成事件', () => {
   const history = [event('completed', '2026-11'), event('completed', '中学时代'), event('in_progress', '2027-01'), event('paused', '2027-02')];
   const record = entry({ history });

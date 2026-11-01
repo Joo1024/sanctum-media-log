@@ -21,6 +21,11 @@ export function isCalendarDate(value) {
 export function validDate(value) {
   if (value === null || value === '') return true;
   if (typeof value !== 'string' || !value.trim()) return false;
+  // 年份区间作为自定义时期保留，不补造具体体验日期。
+  if (/^\d{4}-\d{4}$/.test(value)) {
+    const [start, end] = value.split('-').map(Number);
+    return start > 0 && end >= start;
+  }
   // 以 YYYY 或 YYYY- 开头的日期仍校验日历，避免把日期笔误当作自定义时期。
   if (/^\d{4}(?:-|$)/.test(value)) return isCalendarDate(value);
   return true;
