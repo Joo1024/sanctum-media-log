@@ -32,6 +32,19 @@ header {
   margin-bottom: 22px;
 }
 
+.header-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 18px;
+}
+
+.header-title nav {
+  display: flex;
+  gap: 14px;
+  font-size: 13px;
+}
+
 h1 {
   font-size: 21px;
   font-weight: 600;

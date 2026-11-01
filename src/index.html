@@ -13,7 +13,16 @@
 </head>
 <body>
   <main>
-    <header><h1>sanctum-media-log</h1><p id="count" role="status" aria-live="polite">加载中…</p></header>
+    <header>
+      <div class="header-title">
+        <h1>sanctum-media-log</h1>
+        <nav aria-label="个人链接">
+          <a href="https://joo1024.github.io/" target="_blank" rel="noopener noreferrer">Blog</a>
+          <a href="https://github.com/Joo1024" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </nav>
+      </div>
+      <p id="count" role="status" aria-live="polite">加载中…</p>
+    </header>
     <form id="filters" role="search" aria-label="筛选记录">
       <input id="search" name="query" type="search" aria-label="搜索记录" placeholder="搜索名称、短评、标签、时期" autocomplete="off">
       <select id="type" name="type" aria-label="类型"><option value="">全部类型</option></select>
