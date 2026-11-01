@@ -11895,6 +11895,10 @@
         "status": "in_progress",
         "date": "2026-10-01",
         "rating": 5
+      },
+      {
+        "status": "completed",
+        "date": "2026-11-01"
       }
     ],
     "comment": "",
@@ -17762,5 +17766,141 @@
     "author": [
       "[日] 户根勤"
     ]
+  },
+  {
+    "id": "douban-video-36923479",
+    "title": "凡人修仙传：外海风云",
+    "type": "video",
+    "history": [
+      {
+        "status": "completed",
+        "date": "2026-11-01"
+      }
+    ],
+    "comment": "",
+    "tags": [],
+    "url": [
+      "https://movie.douban.com/subject/36923479/"
+    ],
+    "review_url": ""
+  },
+  {
+    "id": "douban-video-35640039",
+    "title": "凡人修仙传：魔道争锋",
+    "type": "video",
+    "history": [
+      {
+        "status": "completed",
+        "date": "2026-11-01"
+      }
+    ],
+    "comment": "",
+    "tags": [],
+    "url": [
+      "https://movie.douban.com/subject/35640039/"
+    ],
+    "review_url": ""
+  },
+  {
+    "id": "douban-video-36017435",
+    "title": "凡人修仙传：初入星海",
+    "type": "video",
+    "history": [
+      {
+        "status": "completed",
+        "date": "2026-11-01"
+      }
+    ],
+    "comment": "",
+    "tags": [],
+    "url": [
+      "https://movie.douban.com/subject/36017435/"
+    ],
+    "review_url": ""
+  },
+  {
+    "id": "douban-video-35259437",
+    "title": "凡人修仙传：燕家堡之战",
+    "type": "video",
+    "history": [
+      {
+        "status": "completed",
+        "date": "2026-11-01"
+      }
+    ],
+    "comment": "",
+    "tags": [],
+    "url": [
+      "https://movie.douban.com/subject/35259437/"
+    ],
+    "review_url": ""
+  },
+  {
+    "id": "douban-video-35882624",
+    "title": "凡人修仙传：再别天南",
+    "type": "video",
+    "history": [
+      {
+        "status": "completed",
+        "date": "2026-11-01"
+      }
+    ],
+    "comment": "",
+    "tags": [],
+    "url": [
+      "https://movie.douban.com/subject/35882624/"
+    ],
+    "review_url": ""
+  },
+  {
+    "id": "douban-video-36139980",
+    "title": "凡人修仙传：星海飞驰篇",
+    "type": "video",
+    "history": [
+      {
+        "status": "completed",
+        "date": "2026-11-01"
+      }
+    ],
+    "comment": "",
+    "tags": [],
+    "url": [
+      "https://movie.douban.com/subject/36139980/"
+    ],
+    "review_url": ""
+  },
+  {
+    "id": "douban-video-34925294",
+    "title": "凡人修仙传：风起天南",
+    "type": "video",
+    "history": [
+      {
+        "status": "completed",
+        "date": "2026-11-01"
+      }
+    ],
+    "comment": "",
+    "tags": [],
+    "url": [
+      "https://movie.douban.com/subject/34925294/"
+    ],
+    "review_url": ""
+  },
+  {
+    "id": "douban-video-37457082",
+    "title": "凡人修仙传 年番4 / 凡人修仙传：慕兰之战",
+    "type": "video",
+    "history": [
+      {
+        "status": "in_progress",
+        "date": "2026-11-01"
+      }
+    ],
+    "comment": "",
+    "tags": [],
+    "url": [
+      "https://movie.douban.com/subject/37457082/"
+    ],
+    "review_url": ""
   }
 ]
