@@ -7,7 +7,7 @@ const item = (id, date, changes = {}) => ({
   comment: '', tags: [], url: [], review_url: '', ...changes,
 });
 const fixtures = [
-  item('a', '2026-10', { rating: 1, history: [{ status: 'completed', date: '2025', rating: 4 }, { status: 'in_progress', date: '2026-10', rating: 5 }], comment: '<b>纯文本短评</b>', tags: ['标签'], url: ['https://example.com/a'] }),
+  item('a', '2026-10', { history: [{ status: 'completed', date: '2025', rating: 4 }, { status: 'in_progress', date: '2026-10', rating: 5 }], comment: '<b>纯文本短评</b>', tags: ['标签'], url: ['https://example.com/a'] }),
   item('b', '2025', { type: 'video' }),
   item('c', '中学时代', { history: [{ status: 'planned', date: '中学时代' }] }),
   item('d', null),

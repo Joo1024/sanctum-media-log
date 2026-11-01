@@ -3,15 +3,15 @@ import assert from 'node:assert/strict';
 import { TYPES, STATUSES, validateRecords, validDate, isCalendarDate, currentStatus, currentRating, latestUpdateDate, recordYear, yearsOf, filterRecords, compareUpdatedDates } from '../src/lib.mjs';
 
 const event = (status = 'completed', date = '2026-10-31') => ({ status, date });
-const entry = (changes = {}) => ({ id: 'record-1', title: '测试作品', type: 'book', history: [event()], rating: null, comment: '', tags: [], url: [], review_url: '', ...changes });
+const entry = (changes = {}) => ({ id: 'record-1', title: '测试作品', type: 'book', history: [event()], comment: '', tags: [], url: [], review_url: '', ...changes });
 const dated = (date, changes = {}) => entry({ history: [event('completed', date)], ...changes });
 
 test('允许空数据、部分日期、未评分、额外字段和同一对象的多次体验', () => {
   assert.deepEqual(validateRecords([]), []);
   const record = entry({ platform: '纸书', history: [event('completed', '中学时代'), event('in_progress', '2026-10'), event('completed', '2026-11'), event('completed', null)] });
   assert.deepEqual(validateRecords([record]), []);
-  assert.deepEqual(validateRecords([dated('2025', { rating: 0 })]), []);
-  assert.deepEqual(validateRecords([dated('2026-02', { rating: 4.5 })]), []);
+  assert.deepEqual(validateRecords([entry({ history: [{ ...event('completed', '2025'), rating: 0 }] })]), []);
+  assert.deepEqual(validateRecords([entry({ history: [{ ...event('completed', '2026-02'), rating: 4.5 }] })]), []);
   assert.equal(currentStatus(record), 'completed');
 });
 
@@ -21,7 +21,7 @@ test('拒绝旧顶层字段、空历史、非对象事件、缺少事件字段�
   }
   const missing = entry(); delete missing.history;
   assert.ok(validateRecords([missing]).some(error => error.includes('缺少 history')));
-  for (const key of ['status', 'date']) assert.ok(validateRecords([entry({ [key]: null })]).some(error => error.includes(`顶层 ${key}`)));
+  for (const key of ['status', 'date', 'rating']) assert.ok(validateRecords([entry({ [key]: null })]).some(error => error.includes(`顶层 ${key}`)));
   for (const status of Object.keys(STATUSES)) assert.deepEqual(validateRecords([entry({ history: [event(status, null)] })]), []);
 });
 
@@ -140,15 +140,15 @@ test('计划中和进行中的日期进入列表；最后事件日期未知时�
   assert.equal(latestUpdateDate(records[2]), null);
 });
 
-test('评分由最后一个非空历史评分推导，兼容旧顶层评分，0 有效且不改写源数据', () => {
-  const record = entry({ rating: 4, history: [{ ...event(), rating: 3 }, { ...event(), rating: 5 }, { ...event(), rating: null }] });
+test('评分只取最后一个非空历史评分，未评分返回 null，0 有效且不改写源数据', () => {
+  const record = entry({ history: [{ ...event(), rating: 3 }, { ...event(), rating: 5 }, { ...event(), rating: null }] });
   const snapshot = structuredClone(record);
   assert.equal(currentRating(record), 5);
-  assert.equal(currentRating(entry({ rating: 4 })), 4);
-  assert.equal(currentRating(entry({ rating: 4, history: [{ ...event(), rating: 0 }] })), 0);
-  const fresh = entry(); delete fresh.rating;
+  assert.equal(currentRating(entry({ history: [{ ...event(), rating: 0 }] })), 0);
+  const fresh = entry();
   assert.deepEqual(validateRecords([fresh]), []);
   assert.equal(currentRating(fresh), null);
+  assert.equal(currentRating(entry({ history: [{ ...event(), rating: null }] })), null);
   assert.deepEqual(record, snapshot);
 });
 

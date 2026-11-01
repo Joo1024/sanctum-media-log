@@ -44,8 +44,7 @@ function validRating(value) {
 function validStringArray(value) {
   return Array.isArray(value) && value.every(item => typeof item === 'string' && item.trim());
 }
-function validateOptionalFields(value, at, errors) {
-  if (Object.hasOwn(value, 'rating') && !validRating(value.rating)) errors.push(`${at}：rating 需为 0–5 的数字或 null。`);
+function validateProgress(value, at, errors) {
   if (Object.hasOwn(value, 'progress')) {
     const progress = value.progress;
     const amount = number => typeof number === 'number' && Number.isFinite(number) && number >= 0;
@@ -75,7 +74,7 @@ export function validateRecords(records) {
     ids.add(record.id);
     if (typeof record.title !== 'string' || !record.title.trim()) errors.push(`${at}：title 不能为空。`);
     if (!Object.hasOwn(TYPES, record.type)) errors.push(`${at}：不支持的 type：${record.type}。`);
-    for (const key of ['status', 'date']) {
+    for (const key of ['status', 'date', 'rating']) {
       if (Object.hasOwn(record, key)) errors.push(`${at}：不再支持顶层 ${key}，请放入 history 事件。`);
     }
     if (!Array.isArray(record.history) || record.history.length === 0) {
@@ -90,12 +89,13 @@ export function validateRecords(records) {
           if (!Object.hasOwn(event, key)) errors.push(`${eventAt}：缺少 ${key}。`);
         }
         if (!Object.hasOwn(STATUSES, event.status)) errors.push(`${eventAt}：不支持的 status：${event.status}。`);
-        validateOptionalFields(event, eventAt, errors);
+        if (Object.hasOwn(event, 'rating') && !validRating(event.rating)) errors.push(`${eventAt}：rating 需为 0–5 的数字或 null。`);
+        validateProgress(event, eventAt, errors);
         if (Object.hasOwn(event, 'comment') && typeof event.comment !== 'string') errors.push(`${eventAt}：comment 必须是字符串。`);
         if (!validDate(event.date)) errors.push(`${eventAt}：date 需为有效日期、自定义时期文本或 null；标准日期不能是无效日历日期。`);
       });
     }
-    validateOptionalFields(record, at, errors);
+    validateProgress(record, at, errors);
     for (const key of ['author', 'lists']) {
       if (Object.hasOwn(record, key) && !validStringArray(record[key])) errors.push(`${at}：${key} 需为非空字符串的数组，没有内容用 []。`);
     }
@@ -121,8 +121,7 @@ export function currentRating(record) {
   for (let index = record.history.length - 1; index >= 0; index--) {
     if (record.history[index].rating != null) return record.history[index].rating;
   }
-  // 兼容只在顶层保存评分的旧记录，新评分只需写入 history。
-  return record.rating ?? null;
+  return null;
 }
 export function recordYear(record) {
   const date = latestUpdateDate(record);
