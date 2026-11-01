@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TYPES, STATUSES, validateRecords, validDate, isCalendarDate, currentStatus, lastCompletedDate, latestUpdateDate, recordYear, yearsOf, filterRecords, sortRecords } from '../src/lib.mjs';
+import { TYPES, STATUSES, validateRecords, validDate, isCalendarDate, currentStatus, currentRating, latestUpdateDate, recordYear, yearsOf, filterRecords, compareUpdatedDates } from '../src/lib.mjs';
 
 const event = (status = 'completed', date = '2026-10-31') => ({ status, date });
 const entry = (changes = {}) => ({ id: 'record-1', title: '测试作品', type: 'book', history: [event()], rating: null, comment: '', tags: [], url: [], review_url: '', ...changes });
@@ -13,7 +13,6 @@ test('允许空数据、部分日期、未评分、额外字段和同一对象�
   assert.deepEqual(validateRecords([dated('2025', { rating: 0 })]), []);
   assert.deepEqual(validateRecords([dated('2026-02', { rating: 4.5 })]), []);
   assert.equal(currentStatus(record), 'completed');
-  assert.equal(lastCompletedDate(record), null);
 });
 
 test('拒绝旧顶层字段、空历史、非对象事件、缺少事件字段和非法状态', () => {
@@ -37,12 +36,11 @@ test('每项事件均校验日期；拒绝重复标识、非法评分和链接',
   for (const changes of [{ rating: 6 }, { rating: '4' }, { url: ['javascript:alert(1)'] }, { url: '' }, { url: null }, { url: [''] }, { url: ['https://example.com', 123] }, { review_url: '/blog' }, { tags: ['重复', '重复'] }, { type: 'invalid' }]) assert.ok(validateRecords([entry(changes)]).length);
 });
 
-test('当前状态取末项，最近完成日期取最后的 completed，而不是日期最大值或当前事件日期', () => {
+test('当前状态和列表日期取末项，而不是日期最大值或最后完成事件', () => {
   const history = [event('completed', '2026-11'), event('completed', '中学时代'), event('in_progress', '2027-01'), event('paused', '2027-02')];
   const record = entry({ history });
   const snapshot = structuredClone(record);
   assert.equal(currentStatus(record), 'paused');
-  assert.equal(lastCompletedDate(record), '中学时代');
   assert.equal(latestUpdateDate(record), '2027-02');
   assert.equal(recordYear(record), '2027');
   assert.equal(filterRecords([record], { status: 'paused', year: '2027' }).length, 1);
@@ -52,11 +50,10 @@ test('当前状态取末项，最近完成日期取最后的 completed，而不�
   assert.deepEqual(record, snapshot);
 });
 
-test('最近完成日期仍单独推导；列表日期与年份使用最后事件，不回退', () => {
+test('列表日期与年份使用最后事件，不回退', () => {
   for (const history of [[event('in_progress', '2026-10')], [event('planned', '中学时代')], [event(), event('completed', null), event('abandoned', '2027')], [event(), event('completed', '')]]) {
     const record = entry({ history });
-    assert.equal(lastCompletedDate(record), null);
-    const lastDate = history.at(-1).date || null;
+      const lastDate = history.at(-1).date || null;
     assert.equal(latestUpdateDate(record), lastDate);
     const year = !lastDate ? 'unknown' : isCalendarDate(lastDate) ? lastDate.slice(0, 4) : 'custom';
     assert.equal(recordYear(record), year);
@@ -84,7 +81,7 @@ test('组合名称、短评、标签、类型、当前状态与最新更新年�
 
 test('按最新更新日期排序，保留日期精度，自定义时期与未知日期置后', () => {
   const records = [dated(null, { id: 'unknown' }), dated('2026', { id: 'year' }), dated('2026-10', { id: 'month' }), entry({ id: 'day', history: [event(), event('in_progress', '2027')] }), entry({ id: 'planned', history: [event('planned', '2028')] })];
-  assert.deepEqual(sortRecords(records).map(record => record.id), ['planned', 'day', 'month', 'year', 'unknown']);
+  assert.deepEqual([...records].sort(compareUpdatedDates).map(record => record.id), ['planned', 'day', 'month', 'year', 'unknown']);
   assert.equal(filterRecords(records, { year: '2026', status: 'completed' }).length, 2);
   assert.equal(filterRecords(records, { year: 'unknown', status: 'completed' }).length, 1);
   assert.equal(records[1].history[0].date, '2026');
@@ -93,7 +90,7 @@ test('按最新更新日期排序，保留日期精度，自定义时期与未�
 test('空数据与搜索无结果返回空数组', () => {
   assert.deepEqual(filterRecords([], { query: '书' }), []);
   assert.deepEqual(yearsOf([]), []);
-  assert.deepEqual(sortRecords([]), []);
+  assert.deepEqual([].sort(compareUpdatedDates), []);
   assert.deepEqual(filterRecords([entry()], { query: '没有这本书' }), []);
 });
 
@@ -114,7 +111,7 @@ test('最新更新的自定义时期原样保留，可搜索并与标准年份�
   assert.deepEqual(filterRecords(records, { query: '中学时代' }).map(record => record.id), ['school']);
   assert.deepEqual(filterRecords(records, { year: '2026' }).map(record => record.id), ['year']);
   assert.deepEqual(filterRecords(records, { year: 'unknown' }).map(record => record.id), ['unknown']);
-  assert.deepEqual(sortRecords(records).map(record => record.id), ['year', 'school', 'summer', 'unknown']);
+  assert.deepEqual([...records].sort(compareUpdatedDates).map(record => record.id), ['year', 'school', 'summer', 'unknown']);
   assert.equal(records[0].history[0].date, '中学时代');
 });
 
@@ -130,6 +127,37 @@ test('计划中和进行中的日期进入列表；最后事件日期未知时�
   assert.deepEqual(filterRecords(records, { year: 'custom' }).map(r => r.id), ['reading']);
   assert.deepEqual(filterRecords(records, { year: 'unknown' }).map(r => r.id), ['unknown']);
   assert.deepEqual(filterRecords(records, { year: '2025' }), []);
-  assert.equal(lastCompletedDate(records[2]), '2025');
   assert.equal(latestUpdateDate(records[2]), null);
+});
+
+test('评分由最后一个非空历史评分推导，兼容旧顶层评分，0 有效且不改写源数据', () => {
+  const record = entry({ rating: 4, history: [{ ...event(), rating: 3 }, { ...event(), rating: 5 }, { ...event(), rating: null }] });
+  const snapshot = structuredClone(record);
+  assert.equal(currentRating(record), 5);
+  assert.equal(currentRating(entry({ rating: 4 })), 4);
+  assert.equal(currentRating(entry({ rating: 4, history: [{ ...event(), rating: 0 }] })), 0);
+  const fresh = entry(); delete fresh.rating;
+  assert.deepEqual(validateRecords([fresh]), []);
+  assert.equal(currentRating(fresh), null);
+  assert.deepEqual(record, snapshot);
+});
+
+test('校验历史评分、进度和短评，以及可选作者与清单字段', () => {
+  for (const rating of [-1, 6, '5', NaN, Infinity]) {
+    assert.ok(validateRecords([entry({ history: [{ ...event(), rating }] })]).some(error => error.includes('history 第 1 项：rating')));
+  }
+  for (const progress of [null, [], '10页', {}, { value: -5 }, { value: Infinity }, { value: 1, total: '很多' }, { value: 1, total: -1 }, { value: 1, unit: {} }]) {
+    for (const changes of [{ progress }, { history: [{ ...event(), progress }] }]) assert.ok(validateRecords([entry(changes)]).some(error => error.includes('progress')));
+  }
+  for (const key of ['author', 'lists']) {
+    for (const value of [{}, 123, [''], [1]]) assert.ok(validateRecords([entry({ [key]: value })]).some(error => error.includes(key)));
+  }
+  assert.ok(validateRecords([entry({ history: [{ ...event(), comment: {} }] })]).some(error => error.includes('comment')));
+  assert.deepEqual(validateRecords([entry({ author: ['作者'], lists: [], progress: { value: 0, unit: '页' }, history: [{ ...event(), rating: 0, comment: '', progress: { value: 37, total: 336, unit: '页' } }] })]), []);
+});
+
+test('日期升降序共用分组规则，同日期、自定义时期、未知日期均按稳定 ID 排列', () => {
+  const records = [dated(null, { id: 'z' }), dated('大学期间', { id: 'custom-b' }), dated('2026-10', { id: 'b' }), dated('2026', { id: 'year' }), dated('中学时代', { id: 'custom-a' }), dated('2026-10', { id: 'a' }), dated('', { id: 'x' })];
+  assert.deepEqual([...records].sort(compareUpdatedDates).map(r => r.id), ['a', 'b', 'year', 'custom-a', 'custom-b', 'x', 'z']);
+  assert.deepEqual([...records].sort((a, b) => compareUpdatedDates(a, b, 'asc')).map(r => r.id), ['year', 'a', 'b', 'custom-a', 'custom-b', 'x', 'z']);
 });

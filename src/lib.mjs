@@ -6,7 +6,7 @@ export const STATUSES = Object.freeze({
   planned: '计划中', in_progress: '进行中', completed: '已完成',
   paused: '已暂停', abandoned: '已放弃',
 });
-export const REQUIRED_FIELDS = ['id', 'title', 'type', 'history', 'rating', 'comment', 'tags', 'url', 'review_url'];
+export const REQUIRED_FIELDS = ['id', 'title', 'type', 'history', 'comment', 'tags', 'url', 'review_url'];
 
 export function isCalendarDate(value) {
   if (typeof value !== 'string' || !/^\d{4}(-\d{2})?(-\d{2})?$/.test(value)) return false;
@@ -31,6 +31,26 @@ export function validUrl(value) {
   if (typeof value !== 'string') return false;
   try { return ['https:', 'http:'].includes(new URL(value).protocol); }
   catch { return false; }
+}
+
+function validRating(value) {
+  return value === null || (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 5);
+}
+function validStringArray(value) {
+  return Array.isArray(value) && value.every(item => typeof item === 'string' && item.trim());
+}
+function validateOptionalFields(value, at, errors) {
+  if (Object.hasOwn(value, 'rating') && !validRating(value.rating)) errors.push(`${at}：rating 需为 0–5 的数字或 null。`);
+  if (Object.hasOwn(value, 'progress')) {
+    const progress = value.progress;
+    const amount = number => typeof number === 'number' && Number.isFinite(number) && number >= 0;
+    if (!progress || typeof progress !== 'object' || Array.isArray(progress)
+      || !amount(progress.value)
+      || (Object.hasOwn(progress, 'total') && !amount(progress.total))
+      || (Object.hasOwn(progress, 'unit') && typeof progress.unit !== 'string')) {
+      errors.push(`${at}：progress 需为对象，value 和可选 total 为非负有限数字，可选 unit 为字符串。`);
+    }
+  }
 }
 
 export function validateRecords(records) {
@@ -65,10 +85,15 @@ export function validateRecords(records) {
           if (!Object.hasOwn(event, key)) errors.push(`${eventAt}：缺少 ${key}。`);
         }
         if (!Object.hasOwn(STATUSES, event.status)) errors.push(`${eventAt}：不支持的 status：${event.status}。`);
+        validateOptionalFields(event, eventAt, errors);
+        if (Object.hasOwn(event, 'comment') && typeof event.comment !== 'string') errors.push(`${eventAt}：comment 必须是字符串。`);
         if (!validDate(event.date)) errors.push(`${eventAt}：date 需为有效日期、自定义时期文本或 null；标准日期不能是无效日历日期。`);
       });
     }
-    if (record.rating !== null && (typeof record.rating !== 'number' || !Number.isFinite(record.rating) || record.rating < 0 || record.rating > 5)) errors.push(`${at}：rating 需为 0–5 的数字或 null。`);
+    validateOptionalFields(record, at, errors);
+    for (const key of ['author', 'lists']) {
+      if (Object.hasOwn(record, key) && !validStringArray(record[key])) errors.push(`${at}：${key} 需为非空字符串的数组，没有内容用 []。`);
+    }
     if (typeof record.comment !== 'string') errors.push(`${at}：comment 必须是字符串。`);
     if (!Array.isArray(record.tags) || record.tags.some(tag => typeof tag !== 'string' || !tag.trim()) || new Set(record.tags).size !== record.tags.length) errors.push(`${at}：tags 需为无重复、非空字符串的数组。`);
     if (!Array.isArray(record.url) || record.url.some(url => !url || !validUrl(url))) errors.push(`${at}：url 需为完整 http(s) 链接的数组，没有链接用 []。`);
@@ -87,12 +112,12 @@ export function currentStatus(record) {
 export function latestUpdateDate(record) {
   return record.history.at(-1).date || null;
 }
-export function lastCompletedDate(record) {
-  // 数组顺序就是实际发生顺序；不按日期排序，也不跳过未知的完成日期。
+export function currentRating(record) {
   for (let index = record.history.length - 1; index >= 0; index--) {
-    if (record.history[index].status === 'completed') return record.history[index].date || null;
+    if (record.history[index].rating != null) return record.history[index].rating;
   }
-  return null;
+  // 兼容只在顶层保存评分的旧记录，新评分只需写入 history。
+  return record.rating ?? null;
 }
 export function recordYear(record) {
   const date = latestUpdateDate(record);
@@ -111,9 +136,12 @@ export function matchesRecord(record, { query = '', type = '', status = '', year
   return (!type || record.type === type) && (!status || currentStatus(record) === status)
     && (!year || recordYear(record) === year) && words.every(word => searchable.includes(word));
 }
-export function sortRecords(records) {
-  // 明确日期倒序；自定义时期不猜测年代，按 id 稳定排列；空日期最后。
-  const group = record => isCalendarDate(latestUpdateDate(record)) ? 0 : latestUpdateDate(record) ? 1 : 2;
-  return [...records].sort((a, b) => group(a) - group(b)
-    || (group(a) === 0 ? latestUpdateDate(b).localeCompare(latestUpdateDate(a)) : 0) || a.id.localeCompare(b.id));
+export function compareUpdatedDates(a, b, direction = 'desc') {
+  const dateA = latestUpdateDate(a);
+  const dateB = latestUpdateDate(b);
+  const group = date => isCalendarDate(date) ? 0 : date ? 1 : 2;
+  // 无论升降序，自定义时期、未知日期均置后；同组按稳定 ID 打破平局。
+  return group(dateA) - group(dateB)
+    || (group(dateA) === 0 ? dateA.localeCompare(dateB) * (direction === 'desc' ? -1 : 1) : 0)
+    || a.id.localeCompare(b.id);
 }

@@ -1,4 +1,4 @@
-import { TYPES, STATUSES, validateRecords, matchesRecord, sortRecords, yearsOf, validUrl, currentStatus, latestUpdateDate } from './lib.mjs';
+import { TYPES, STATUSES, validateRecords, matchesRecord, compareUpdatedDates, yearsOf, validUrl, currentStatus, latestUpdateDate, currentRating } from './lib.mjs';
 
 const form = document.querySelector('#filters');
 const count = document.querySelector('#count');
@@ -47,7 +47,8 @@ function detailsFor(record) {
     group.append(textElement('dt', label), content);
     fields.append(group);
   }
-  field('评分', record.rating === null ? null : `${record.rating} / 5`);
+  const rating = currentRating(record);
+  field('评分', rating === null ? null : `${rating} / 5`);
   field('短评', record.comment);
   field('标签', record.tags);
   field('作者', record.author);
@@ -91,7 +92,6 @@ function formatRow(row) {
   const record = row.getData();
   const open = expanded.has(record.id);
   const details = element.querySelector('.record-details');
-  element.classList.toggle('is-expanded', open);
   element.querySelector('.expand-button')?.setAttribute('aria-expanded', String(open));
   if (open && !details) element.append(detailsFor(record));
   else if (!open && details) details.remove();
@@ -124,10 +124,11 @@ try {
   addOptions('#year', [...yearsOf(records).map(year => [year, `${year} 年`]), ['custom', '自定义时期'], ['unknown', '日期未记']]);
 
   const table = new Tabulator('#records', {
-    data: sortRecords(records).map(record => ({
+    data: records.map(record => ({
       ...record, current_status: currentStatus(record), updated_date: latestUpdateDate(record),
     })),
     index: 'id',
+    initialSort: [{ column: 'updated_date', dir: 'desc' }],
     layout: 'fitColumns',
     responsiveLayout: false,
     // 目前不足千条记录，使用真实行高避免虚拟列表估算高度引起滚动条跳动。
@@ -139,7 +140,10 @@ try {
       { title: '名称', field: 'title', minWidth: 100, widthGrow: 4, formatter: titleCell, variableHeight: true },
       { title: '类型', field: 'type', minWidth: 56, widthGrow: 1, formatter: cell => TYPES[cell.getValue()] },
       { title: '状态', field: 'current_status', minWidth: 66, widthGrow: 1.2, formatter: cell => STATUSES[cell.getValue()] },
-      { title: '最新更新日期', field: 'updated_date', minWidth: 110, widthGrow: 1.5, formatter: cell => textElement('span', cell.getValue() || '—'), sorter: 'string' },
+      { title: '最新更新日期', field: 'updated_date', minWidth: 110, widthGrow: 1.5, formatter: cell => textElement('span', cell.getValue() || '—'), sorter: (_a, _b, rowA, rowB, _column, direction) => {
+        // Tabulator 会再反转降序结果，抵消它以保留空日期始终置后的规则。
+        return compareUpdatedDates(rowA.getData(), rowB.getData(), direction) * (direction === 'desc' ? -1 : 1);
+      } },
     ],
     rowFormatter: formatRow,
   });

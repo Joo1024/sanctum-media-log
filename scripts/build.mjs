@@ -1,14 +1,16 @@
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolve, sep } from 'node:path';
+import { checkSyntax } from './check.mjs';
 import { loadRecords } from './validate.mjs';
 
-export async function build({ output = new URL('../dist/', import.meta.url), recordsPath } = {}) {
+export async function build({ output = new URL('../dist/', import.meta.url), recordsPath, source = new URL('../src/', import.meta.url) } = {}) {
+  await checkSyntax(source);
   // 校验成功后才替换生成目录；只复制网站源码和主数据，不扫描或打包备份。
   const records = await loadRecords(recordsPath);
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
-  await cp(new URL('../src/', import.meta.url), output, { recursive: true });
+  await cp(source, output, { recursive: true });
   const root = output instanceof URL ? output : pathToFileURL(resolve(output) + sep);
   await mkdir(new URL('data/', root), { recursive: true });
   await writeFile(new URL('data/records.json', root), `${JSON.stringify(records, null, 2)}\n`);

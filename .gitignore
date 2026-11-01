@@ -12,3 +12,7 @@ private/
 *.xlsx
 *.xls
 *.zip
+
+# 浏览器测试产物
+test-results/
+playwright-report/

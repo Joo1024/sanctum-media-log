@@ -4,12 +4,19 @@
   "private": true,
   "type": "module",
   "description": "个人书影音、游戏与文化体验记录及静态网站",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "preview": "node scripts/serve.mjs --preview",
     "validate": "node scripts/validate.mjs",
     "build": "node scripts/build.mjs",
-    "test": "node --test"
+    "test": "node scripts/check.mjs && node --test test/*.test.mjs",
+    "test:browser": "playwright test",
+    "fields": "node scripts/fields.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
   }
 }
