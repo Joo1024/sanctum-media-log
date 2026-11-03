@@ -13967,6 +13967,10 @@
       {
         "status": "planned",
         "date": "2026-10-31"
+      },
+      {
+        "status": "in_progress",
+        "date": "2026-11-03"
       }
     ],
     "comment": "",
