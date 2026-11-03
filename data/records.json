@@ -14207,6 +14207,10 @@
       {
         "status": "planned",
         "date": "2026-10-17"
+      },
+      {
+        "status": "in_progress",
+        "date": "2026-11-03"
       }
     ],
     "comment": "",
@@ -14247,6 +14251,10 @@
       {
         "status": "planned",
         "date": "2026-10-17"
+      },
+      {
+        "status": "in_progress",
+        "date": "2026-11-03"
       }
     ],
     "comment": "",
@@ -14447,6 +14455,10 @@
       {
         "status": "planned",
         "date": "2026-10-15"
+      },
+      {
+        "status": "in_progress",
+        "date": "2026-11-03"
       }
     ],
     "comment": "",
